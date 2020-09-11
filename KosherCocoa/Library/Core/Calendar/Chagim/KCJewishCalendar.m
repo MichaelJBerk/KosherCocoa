@@ -167,17 +167,20 @@
             //no yomtov in CHESHVAN
             break;
         case KCHebrewMonthKislev:
-            if (self.dayOfChanukah > 0)
-            {
-                return kChanukah;
-            }
+			if ([self currentHebrewDayOfMonth] == 24)
+			{
+				return kErevChanukah;
+			} else if ([self currentHebrewDayOfMonth] >= 25)
+			{
+				return kChanukah;
+			}
             
             break;
         case KCHebrewMonthTeves:
-            if (self.dayOfChanukah > 0)
-            {
-                return kChanukah;
-            }
+			if ([self currentHebrewDayOfMonth] == 1 || [self currentHebrewDayOfMonth] == 2 || ([self currentHebrewDayOfMonth] == 3 && [self isKislevShort]))
+			{
+				return kChanukah;
+			}
             else if ([self currentHebrewDayOfMonth] == 10)
             {
                 return kTenthOfTeves;
@@ -303,27 +306,21 @@
 //Returns the day of Chanukah or -1 if it is not Chanukah.
 - (NSInteger)dayOfChanukah
 {
-    NSInteger day = -1;
-    
-    NSCalendar *hebrewCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierHebrew];
-    
-    NSDate *date = [self workingDateAdjustedForSunset];
-    
-    NSDateComponents *components = [[NSDateComponents alloc] init];
-    [components setYear:[hebrewCalendar component:NSCalendarUnitYear fromDate:date]];
-    [components setMonth:KCHebrewMonthKislev];
-    [components setDay:25];
-    
-    NSDate *firstNightOfChanuka = [hebrewCalendar dateFromComponents:components];
-    
-    NSInteger calculatedDay = [hebrewCalendar components:NSCalendarUnitDay fromDate:firstNightOfChanuka toDate:date options:0].day + 1;
-    
-    if (calculatedDay > 0 && calculatedDay <= 8)
-    {
-        day = calculatedDay;
-    }
-   
-    return day;
+    if ([self isChanukah])
+	{
+		if ([self currentHebrewMonth] == kKislev)
+		{
+			return [self currentHebrewDayOfMonth] - 24;
+		}
+		else
+		{
+			return ([self isKislevShort] ? [self currentHebrewDayOfMonth] + 5 : [self currentHebrewDayOfMonth] + 6);
+		}
+	}
+	else
+	{
+		return -1;
+	}
    
 }
 
@@ -662,7 +659,7 @@
 //Determine if kislev is short this year
 - (BOOL)isKislevShort
 {
-    return [self lengthOfHebrewYear:[self currentHebrewYear]] % 10 == 3;
+    return [self lengthOfHebrewYear:[self currentHebrewYear]] == 0;
 }
 
 //Get the current hebrew year
@@ -762,12 +759,12 @@
 {
     NSDate *returnDate = [super workingDate];
     
-    BOOL isAfterSunset = [[self sunset] timeIntervalSinceNow] < 0;
-    
+    BOOL isAfterSunset = [[self sunset] timeIntervalSinceDate: [super workingDate]] < 0;
+	
     if (isAfterSunset)
     {
-        NSCalendar *hebrewCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierHebrew];
-        returnDate = [hebrewCalendar dateByAddingDays:1 toDate:returnDate];
+		NSCalendar *gregorianCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+		returnDate = [gregorianCalendar dateByAddingDays:1 toDate:returnDate];
     }
     
     return returnDate;
